@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bright Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Glassmorphism effects */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        .dark .glass {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-input {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .dark .glass-input {
+            background: rgba(31, 41, 55, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-modal {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .dark .glass-modal {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Gradient background */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .dark body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* Select dropdown styling */
+        select.glass-input option {
+            background: rgba(17, 24, 39, 0.95);
+            color: white;
+        }
+        
+        .dark select.glass-input option {
+            background: rgba(17, 24, 39, 0.95);
+            color: white;
+        }
+        
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #invoice-modal, #invoice-modal * {
+                visibility: visible;
+            }
+            #invoice-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border: none;
+                background: white;
+            }
+            #invoice-content {
+                page-break-inside: avoid;
+            }
+            .print\\:hidden {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="glass text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="Bright Studio Logo" class="h-12 w-auto object-contain">
+                <h1 class="text-3xl font-bold">Bright Studio</h1>
+            </div>
+            <button id="dark-mode-toggle" class="p-2 rounded-lg glass-input hover:bg-white hover:bg-opacity-20 transition">
+                <svg id="sun-icon" class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <svg id="moon-icon" class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Tab Navigation -->
+        <div class="glass rounded-lg shadow-md mb-6">
+            <div class="border-b border-white border-opacity-20 dark:border-opacity-10">
+                <nav class="flex -mb-px">
+                    <button id="tab-new-bill" class="tab-button active px-6 py-3 text-sm font-medium text-white dark:text-blue-300 border-b-2 border-white dark:border-blue-300">
+                        New Bill
+                    </button>
+                    <button id="tab-customer-records" class="tab-button px-6 py-3 text-sm font-medium text-white text-opacity-70 dark:text-opacity-60 hover:text-white hover:text-opacity-100 dark:hover:text-opacity-100 hover:border-white hover:border-opacity-30">
+                        Customer Records
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Tab 1: New Bill -->
+        <div id="content-new-bill" class="tab-content">
+            <div class="glass rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-white">Create New Bill</h2>
+                <form id="bill-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Name -->
+                        <div>
+                            <label for="customer-name" class="block text-sm font-medium text-white mb-2">Name <span class="text-red-400">*</span></label>
+                            <input type="text" id="customer-name" name="name" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+
+                        <!-- Contact Number -->
+                        <div>
+                            <label for="contact-number" class="block text-sm font-medium text-white mb-2">Contact Number <span class="text-red-400">*</span></label>
+                            <input type="tel" id="contact-number" name="contact" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+
+                        <!-- Item -->
+                        <div>
+                            <label for="item-service" class="block text-sm font-medium text-white mb-2">Item</label>
+                            <select id="item-service" name="item"
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="">Select an item</option>
+                                <option value="6 x 4">6 x 4</option>
+                                <option value="6 x 8">6 x 8</option>
+                                <option value="6 x 9">6 x 9</option>
+                                <option value="10 x 8">10 x 8</option>
+                                <option value="10 x 20">10 x 20</option>
+                                <option value="12 x 8">12 x 8</option>
+                                <option value="12 x 10">12 x 10</option>
+                                <option value="12 x 15">12 x 15</option>
+                                <option value="12 x 18">12 x 18</option>
+                                <option value="12 x 20">12 x 20</option>
+                                <option value="12 x 36">12 x 36</option>
+                                <option value="16 x 20">16 x 20</option>
+                                <option value="16 x 24">16 x 24</option>
+                                <option value="18 x 24">18 x 24</option>
+                                <option value="20 x 24">20 x 24</option>
+                                <option value="20 x 30">20 x 30</option>
+                                <option value="40 x 30">40 x 30</option>
+                                <option value="6 x 4 cm">6 x 4 cm</option>
+                                <option value="6 x 9 cm">6 x 9 cm</option>
+                                <option value="Maxi">Maxi</option>
+                                <option value="Passport 8">Passport 8</option>
+                                <option value="Passport 16">Passport 16</option>
+                                <option value="Passport 32">Passport 32</option>
+                                <option value="Passport 6 stamp 4">Passport 6 stamp 4</option>
+                                <option value="Other...">Other...</option>
+                            </select>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div>
+                            <label for="item-quantity" class="block text-sm font-medium text-white mb-2">Quantity <span class="text-red-400">*</span></label>
+                            <input type="number" id="item-quantity" name="quantity" min="1" value="1" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+
+                        <!-- Custom Item (Hidden by default) -->
+                        <div id="custom-item-container" class="hidden">
+                            <label for="custom-item" class="block text-sm font-medium text-white mb-2">Custom Item <span class="text-red-400">*</span></label>
+                            <input type="text" id="custom-item" name="customItem" placeholder="Enter custom item details"
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+
+                        <!-- Total Amount -->
+                        <div>
+                            <label for="total-amount" class="block text-sm font-medium text-white mb-2">Total Amount <span class="text-red-400">*</span></label>
+                            <input type="number" id="total-amount" name="total" min="0" step="0.01" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+
+                        <!-- Advance Payment -->
+                        <div>
+                            <label for="advance-payment" class="block text-sm font-medium text-white mb-2">Advance Payment <span class="text-red-400">*</span></label>
+                            <input type="number" id="advance-payment" name="advance" min="0" step="0.01" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+
+                        <!-- Balance Due (Read-only) -->
+                        <div>
+                            <label for="balance-due" class="block text-sm font-medium text-white mb-2">Balance Due</label>
+                            <input type="text" id="balance-due" readonly
+                                class="glass-input w-full px-4 py-2 rounded-lg font-semibold text-white bg-opacity-30">
+                        </div>
+                    </div>
+
+                    <!-- Items List -->
+                    <div id="items-list-container" class="mt-6 hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Items Added:</h3>
+                        <div id="items-list" class="space-y-2 mb-4">
+                            <!-- Items will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Add Item Button -->
+                    <div class="pt-4 flex gap-4">
+                        <button type="button" id="add-item-btn" class="px-6 py-3 glass-input text-white font-semibold rounded-lg hover:bg-white hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition">
+                            Add Item
+                        </button>
+                        <button type="submit" id="save-bill-btn" class="px-8 py-3 glass-input text-white font-semibold rounded-lg hover:bg-white hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition">
+                            Save Bill
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 2: Customer Records -->
+        <div id="content-customer-records" class="tab-content hidden">
+            <div class="glass rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-white">Customer Records</h2>
+                
+                <!-- Search and Export Section -->
+                <div class="mb-6 flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <label for="search-contact" class="block text-sm font-medium text-white mb-2">Search by Contact Number</label>
+                        <input type="text" id="search-contact" placeholder="Enter contact number to search..."
+                            class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="export-csv" class="px-6 py-2 glass-input text-white font-semibold rounded-lg hover:bg-white hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 transition">
+                            Export to CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="overflow-x-auto">
+                    <table id="records-table" class="min-w-full divide-y divide-white divide-opacity-20">
+                        <thead class="glass">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">S.No.</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Contact Number</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Item</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Total Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Advance Payment</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Balance Due</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-tbody" class="divide-y divide-white divide-opacity-10">
+                            <!-- Records will be inserted here -->
+                        </tbody>
+                    </table>
+                    <div id="no-records" class="text-center py-8 text-white text-opacity-70 hidden">
+                        No records found.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md glass-modal">
+            <div class="mt-3">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-500 bg-opacity-20 rounded-full mb-4">
+                    <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-white text-center mb-2">Confirm Delete</h3>
+                <p class="text-sm text-white text-opacity-80 text-center mb-6">Are you sure you want to delete this record?</p>
+                <div class="flex gap-3 justify-center">
+                    <button id="delete-cancel" class="px-4 py-2 glass-input text-white rounded-lg hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        Cancel
+                    </button>
+                    <button id="delete-confirm" class="px-4 py-2 bg-red-500 bg-opacity-80 text-white rounded-lg hover:bg-opacity-100 focus:outline-none focus:ring-2 focus:ring-red-400">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md glass-modal mb-10">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-white mb-4">Edit Record</h3>
+                <form id="edit-form" class="space-y-4">
+                    <input type="hidden" id="edit-serial-no">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-name" class="block text-sm font-medium text-white mb-2">Name <span class="text-red-400">*</span></label>
+                            <input type="text" id="edit-name" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label for="edit-contact" class="block text-sm font-medium text-white mb-2">Contact Number <span class="text-red-400">*</span></label>
+                            <input type="tel" id="edit-contact" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label for="edit-item" class="block text-sm font-medium text-white mb-2">Item</label>
+                            <select id="edit-item"
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="">Select an item</option>
+                                <option value="6 x 4">6 x 4</option>
+                                <option value="6 x 8">6 x 8</option>
+                                <option value="6 x 9">6 x 9</option>
+                                <option value="10 x 8">10 x 8</option>
+                                <option value="10 x 20">10 x 20</option>
+                                <option value="12 x 8">12 x 8</option>
+                                <option value="12 x 10">12 x 10</option>
+                                <option value="12 x 15">12 x 15</option>
+                                <option value="12 x 18">12 x 18</option>
+                                <option value="12 x 20">12 x 20</option>
+                                <option value="12 x 36">12 x 36</option>
+                                <option value="16 x 20">16 x 20</option>
+                                <option value="16 x 24">16 x 24</option>
+                                <option value="18 x 24">18 x 24</option>
+                                <option value="20 x 24">20 x 24</option>
+                                <option value="20 x 30">20 x 30</option>
+                                <option value="40 x 30">40 x 30</option>
+                                <option value="6 x 4 cm">6 x 4 cm</option>
+                                <option value="6 x 9 cm">6 x 9 cm</option>
+                                <option value="Maxi">Maxi</option>
+                                <option value="Passport 8">Passport 8</option>
+                                <option value="Passport 16">Passport 16</option>
+                                <option value="Passport 32">Passport 32</option>
+                                <option value="Passport 6 stamp 4">Passport 6 stamp 4</option>
+                                <option value="Other...">Other...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="edit-quantity" class="block text-sm font-medium text-white mb-2">Quantity <span class="text-red-400">*</span></label>
+                            <input type="number" id="edit-quantity" min="1" value="1"
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div id="edit-custom-item-container" class="hidden">
+                            <label for="edit-custom-item" class="block text-sm font-medium text-white mb-2">Custom Item <span class="text-red-400">*</span></label>
+                            <input type="text" id="edit-custom-item" placeholder="Enter custom item details"
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label for="edit-total" class="block text-sm font-medium text-white mb-2">Total Amount <span class="text-red-400">*</span></label>
+                            <input type="number" id="edit-total" min="0" step="0.01" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label for="edit-advance" class="block text-sm font-medium text-white mb-2">Advance Payment <span class="text-red-400">*</span></label>
+                            <input type="number" id="edit-advance" min="0" step="0.01" required
+                                class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label for="edit-balance" class="block text-sm font-medium text-white mb-2">Balance Due</label>
+                            <input type="text" id="edit-balance" readonly
+                                class="glass-input w-full px-4 py-2 rounded-lg font-semibold text-white bg-opacity-30">
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Items List -->
+                    <div id="edit-items-list-container" class="mt-4">
+                        <h4 class="text-md font-semibold text-white mb-3">Items:</h4>
+                        <div id="edit-items-list" class="space-y-2 mb-4">
+                            <!-- Items will be added here -->
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 justify-end pt-4">
+                        <button type="button" id="edit-add-item-btn" class="px-4 py-2 glass-input text-white rounded-lg hover:bg-white hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            Add Item
+                        </button>
+                        <button type="button" id="edit-cancel" class="px-4 py-2 glass-input text-white rounded-lg hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 glass-input text-white rounded-lg hover:bg-white hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div id="invoice-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+        <div class="relative top-5 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white mb-10 print:shadow-none print:border-none">
+            <div id="invoice-content" class="bg-white p-8 print:p-4">
+                <!-- Invoice Header -->
+                <div class="text-center mb-8 print:mb-6">
+                    <div class="flex justify-center items-center gap-4 mb-4 print:mb-3">
+                        <img src="logo.png" alt="Bright Studio Logo" class="h-16 w-auto object-contain print:h-14">
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2 print:text-2xl">Bright Studio</h1>
+                    <h2 class="text-2xl font-semibold text-gray-700 print:text-xl">Customer Invoice</h2>
+                </div>
+
+                <!-- Invoice Details -->
+                <div class="mb-6 print:mb-4">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Invoice Date & Time:</p>
+                            <p class="text-base font-semibold text-gray-900" id="invoice-datetime"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600 mb-1">Serial Number:</p>
+                            <p class="text-base font-semibold text-gray-900" id="invoice-serial"></p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-300 pt-4 mt-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Customer Name:</p>
+                                <p class="text-base font-semibold text-gray-900" id="invoice-name"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Contact Number:</p>
+                                <p class="text-base font-semibold text-gray-900" id="invoice-contact"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="mb-6 print:mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 print:text-base">Items / Services</h3>
+                    <div class="border border-gray-300 rounded-lg overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Item</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items" class="bg-white divide-y divide-gray-200">
+                                <!-- Items will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Amount Details -->
+                <div class="border-t-2 border-gray-400 pt-4 mb-6 print:mb-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-base font-semibold text-gray-700">Total Amount:</span>
+                            <span class="text-base font-bold text-gray-900" id="invoice-total">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-base font-semibold text-gray-700">Advance Payment:</span>
+                            <span class="text-base font-bold text-gray-900" id="invoice-advance">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t border-gray-300 pt-2 mt-2">
+                            <span class="text-lg font-bold text-gray-900">Balance Due:</span>
+                            <span class="text-lg font-bold text-gray-900" id="invoice-balance">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thank You Note -->
+                <div class="text-center mb-6 print:mb-4">
+                    <p class="text-base text-gray-700 italic">Thank you for choosing our studio!</p>
+                </div>
+
+            </div>
+
+            <!-- Action Buttons (Hidden when printing) -->
+            <div class="mt-6 flex gap-3 justify-end print:hidden">
+                <button id="invoice-close" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    Close
+                </button>
+                <button id="invoice-print" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Print Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // LocalStorage key
+        const STORAGE_KEY = 'photoStudioCustomers';
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDarkMode();
+            initializeTabs();
+            initializeForm();
+            initializeRecords();
+            initializeSearch();
+            initializeExport();
+            initializeInvoice();
+            renderRecords();
+        });
+
+        // Dark mode toggle
+        function initializeDarkMode() {
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const html = document.documentElement;
+            
+            // Check for saved theme preference or default to light mode
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                html.classList.add('dark');
+            }
+            
+            darkModeToggle.addEventListener('click', function() {
+                html.classList.toggle('dark');
+                const isDark = html.classList.contains('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
+        }
+
+        // Tab Navigation
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.id.replace('tab-', 'content-');
+                    
+                    // Update button states
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active', 'text-white', 'dark:text-blue-300', 'border-white', 'dark:border-blue-300');
+                        btn.classList.add('text-white', 'text-opacity-70', 'dark:text-opacity-60');
+                    });
+                    this.classList.add('active', 'text-white', 'dark:text-blue-300', 'border-white', 'dark:border-blue-300');
+                    this.classList.remove('text-white', 'text-opacity-70', 'dark:text-opacity-60');
+
+                    // Update content visibility
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(targetTab).classList.remove('hidden');
+
+                    // If switching to Customer Records, refresh the table
+                    if (targetTab === 'content-customer-records') {
+                        renderRecords();
+                    }
+                });
+            });
+        }
+
+        // Items array to store multiple items before saving
+        let itemsList = [];
+
+        // Form handling
+        function initializeForm() {
+            const form = document.getElementById('bill-form');
+            const itemSelect = document.getElementById('item-service');
+            const customItemContainer = document.getElementById('custom-item-container');
+            const customItemInput = document.getElementById('custom-item');
+            const totalAmount = document.getElementById('total-amount');
+            const advancePayment = document.getElementById('advance-payment');
+            const balanceDue = document.getElementById('balance-due');
+            const addItemBtn = document.getElementById('add-item-btn');
+            const itemsListContainer = document.getElementById('items-list-container');
+            const itemsListDiv = document.getElementById('items-list');
+
+            // Show/hide custom item field
+            itemSelect.addEventListener('change', function() {
+                if (this.value === 'Other...') {
+                    customItemContainer.classList.remove('hidden');
+                    customItemInput.required = true;
+                } else {
+                    customItemContainer.classList.add('hidden');
+                    customItemInput.required = false;
+                    customItemInput.value = '';
+                }
+            });
+
+            // Real-time balance calculation
+            function calculateBalance() {
+                const total = parseFloat(totalAmount.value) || 0;
+                const advance = parseFloat(advancePayment.value) || 0;
+                const balance = total - advance;
+                balanceDue.value = balance.toFixed(2);
+            }
+
+            totalAmount.addEventListener('input', calculateBalance);
+            advancePayment.addEventListener('input', calculateBalance);
+
+            // Add item button
+            addItemBtn.addEventListener('click', function() {
+                const itemValue = itemSelect.value;
+                const quantity = parseInt(document.getElementById('item-quantity').value) || 1;
+                
+                if (!itemValue || itemValue === '') {
+                    showToast('Please select an item', 'error');
+                    return;
+                }
+
+                const displayItem = itemValue === 'Other...' ? customItemInput.value : itemValue;
+                
+                if (itemValue === 'Other...' && !displayItem.trim()) {
+                    showToast('Please enter custom item details', 'error');
+                    return;
+                }
+
+                // Add item to list
+                itemsList.push({
+                    item: displayItem,
+                    quantity: quantity,
+                    customItem: itemValue === 'Other...' ? displayItem : ''
+                });
+
+                // Show items list
+                itemsListContainer.classList.remove('hidden');
+                renderItemsList();
+
+                // Reset item fields
+                itemSelect.value = '';
+                document.getElementById('item-quantity').value = 1;
+                customItemContainer.classList.add('hidden');
+                customItemInput.value = '';
+                customItemInput.required = false;
+
+                showToast('Item added successfully', 'success');
+            });
+
+            // Render items list
+            function renderItemsList() {
+                itemsListDiv.innerHTML = '';
+                itemsList.forEach((item, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'glass p-4 rounded-lg flex justify-between items-center mb-2';
+                    itemDiv.innerHTML = `
+                        <div class="flex-1">
+                            <span class="text-white font-semibold text-lg">${item.item}</span>
+                            <span class="text-white text-opacity-90 ml-3 font-medium">Quantity: ${item.quantity}</span>
+                        </div>
+                        <button type="button" onclick="removeItem(${index})" class="ml-4 px-3 py-1 glass-input text-red-300 hover:text-red-200 rounded-lg transition">
+                            Remove
+                        </button>
+                    `;
+                    itemsListDiv.appendChild(itemDiv);
+                });
+            }
+
+            // Store render function globally
+            window.renderItemsList = renderItemsList;
+            window.removeItem = function(index) {
+                itemsList.splice(index, 1);
+                if (itemsList.length === 0) {
+                    itemsListContainer.classList.add('hidden');
+                } else {
+                    renderItemsList();
+                }
+                showToast('Item removed', 'success');
+            };
+
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveBill();
+            });
+        }
+
+        // Save bill to localStorage
+        function saveBill() {
+            const form = document.getElementById('bill-form');
+            const formData = new FormData(form);
+            
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('contact')) {
+                showToast('Please fill in customer name and contact', 'error');
+                return;
+            }
+
+            if (itemsList.length === 0) {
+                showToast('Please add at least one item', 'error');
+                return;
+            }
+
+            if (!formData.get('total') || !formData.get('advance')) {
+                showToast('Please enter total amount and advance payment', 'error');
+                return;
+            }
+            
+            // Get all customers
+            const customers = getCustomers();
+            
+            // Generate serial number
+            const serialNo = customers.length > 0 ? Math.max(...customers.map(c => c.serialNo)) + 1 : 1;
+            
+            // Create customer record with items array
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            const dateTime = `${dateStr} ${timeStr}`;
+            
+            const customer = {
+                serialNo: serialNo,
+                date: dateStr,
+                time: timeStr,
+                dateTime: dateTime,
+                name: formData.get('name'),
+                contact: formData.get('contact'),
+                items: JSON.parse(JSON.stringify(itemsList)), // Deep copy of items
+                total: parseFloat(formData.get('total')),
+                advance: parseFloat(formData.get('advance')),
+                balance: parseFloat(document.getElementById('balance-due').value)
+            };
+
+            // Add to array
+            customers.push(customer);
+            
+            // Save to localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+            
+            // Reset form
+            form.reset();
+            document.getElementById('balance-due').value = '';
+            document.getElementById('custom-item-container').classList.add('hidden');
+            document.getElementById('custom-item').required = false;
+            document.getElementById('item-quantity').value = 1;
+            itemsList = [];
+            document.getElementById('items-list-container').classList.add('hidden');
+            document.getElementById('items-list').innerHTML = '';
+            
+            // Show success message
+            showToast('✅ Bill Saved Successfully!', 'success');
+        }
+
+        // Get customers from localStorage
+        function getCustomers() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        // Initialize records table
+        function initializeRecords() {
+            // Delete modal handlers
+            let recordToDelete = null;
+            
+            document.querySelectorAll('[id^="delete-"]').forEach(btn => {
+                if (btn.id.includes('confirm')) {
+                    btn.addEventListener('click', function() {
+                        if (recordToDelete !== null) {
+                            deleteRecord(recordToDelete);
+                            document.getElementById('delete-modal').classList.add('hidden');
+                            recordToDelete = null;
+                        }
+                    });
+                } else if (btn.id.includes('cancel')) {
+                    btn.addEventListener('click', function() {
+                        document.getElementById('delete-modal').classList.add('hidden');
+                        recordToDelete = null;
+                    });
+                }
+            });
+
+            // Store delete handler globally
+            window.showDeleteModal = function(serialNo) {
+                recordToDelete = serialNo;
+                document.getElementById('delete-modal').classList.remove('hidden');
+            };
+
+            // Edit modal handlers
+            const editForm = document.getElementById('edit-form');
+            const editItemSelect = document.getElementById('edit-item');
+            const editCustomItemContainer = document.getElementById('edit-custom-item-container');
+            const editCustomItemInput = document.getElementById('edit-custom-item');
+            const editQuantity = document.getElementById('edit-quantity');
+            const editAddItemBtn = document.getElementById('edit-add-item-btn');
+            const editTotal = document.getElementById('edit-total');
+            const editAdvance = document.getElementById('edit-advance');
+            const editBalance = document.getElementById('edit-balance');
+
+            // Initialize edit items list
+            window.editItemsList = [];
+
+            // Show/hide custom item in edit modal
+            editItemSelect.addEventListener('change', function() {
+                if (this.value === 'Other...') {
+                    editCustomItemContainer.classList.remove('hidden');
+                    editCustomItemInput.required = true;
+                } else {
+                    editCustomItemContainer.classList.add('hidden');
+                    editCustomItemInput.required = false;
+                    editCustomItemInput.value = '';
+                }
+            });
+
+            // Add item in edit modal
+            editAddItemBtn.addEventListener('click', function() {
+                const itemValue = editItemSelect.value;
+                const quantity = parseInt(editQuantity.value) || 1;
+                
+                if (!itemValue) {
+                    showToast('Please select an item', 'error');
+                    return;
+                }
+
+                const displayItem = itemValue === 'Other...' ? editCustomItemInput.value : itemValue;
+                
+                if (itemValue === 'Other...' && !displayItem.trim()) {
+                    showToast('Please enter custom item details', 'error');
+                    return;
+                }
+
+                if (!window.editItemsList) {
+                    window.editItemsList = [];
+                }
+
+                // Add item to list
+                window.editItemsList.push({
+                    item: displayItem,
+                    quantity: quantity,
+                    customItem: itemValue === 'Other...' ? displayItem : ''
+                });
+
+                // Render items list
+                renderEditItemsList();
+
+                // Reset item fields
+                editItemSelect.value = '';
+                editQuantity.value = 1;
+                editCustomItemContainer.classList.add('hidden');
+                editCustomItemInput.value = '';
+                editCustomItemInput.required = false;
+
+                showToast('Item added successfully', 'success');
+            });
+
+            // Real-time balance calculation in edit modal
+            function calculateEditBalance() {
+                const total = parseFloat(editTotal.value) || 0;
+                const advance = parseFloat(editAdvance.value) || 0;
+                const balance = total - advance;
+                editBalance.value = balance.toFixed(2);
+            }
+
+            editTotal.addEventListener('input', calculateEditBalance);
+            editAdvance.addEventListener('input', calculateEditBalance);
+
+            // Edit form submission
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateRecord();
+            });
+
+            document.getElementById('edit-cancel').addEventListener('click', function() {
+                document.getElementById('edit-modal').classList.add('hidden');
+                window.editItemsList = [];
+            });
+        }
+
+        // Render records table
+        function renderRecords(filteredCustomers = null) {
+            const tbody = document.getElementById('records-tbody');
+            const noRecords = document.getElementById('no-records');
+            const customers = filteredCustomers !== null ? filteredCustomers : getCustomers();
+
+            tbody.innerHTML = '';
+
+            if (customers.length === 0) {
+                noRecords.classList.remove('hidden');
+                return;
+            }
+
+            noRecords.classList.add('hidden');
+
+            customers.forEach(customer => {
+                // Handle both old format (single item) and new format (items array)
+                const items = customer.items || [{ item: customer.item || 'N/A', quantity: 1 }];
+                
+                // Create a more detailed display for items with quantities
+                const itemsDisplay = items.map(i => {
+                    return `<div class="mb-1"><span class="font-semibold">${i.item}</span> - <span class="text-blue-300">Qty: ${i.quantity}</span></div>`;
+                }).join('');
+                
+                // Handle date and time display
+                const dateTimeDisplay = customer.dateTime || (customer.date && customer.time ? `${customer.date} ${customer.time}` : customer.date || 'N/A');
+                
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-white hover:bg-opacity-10 transition';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.serialNo}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${dateTimeDisplay}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.contact}</td>
+                    <td class="px-6 py-4 text-sm text-white max-w-xs">
+                        <div class="space-y-1">${itemsDisplay}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.total.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.advance.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">${customer.balance.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="generateInvoice(${customer.serialNo})" class="text-green-300 hover:text-green-200 mr-3 transition">Generate Invoice</button>
+                        <button onclick="editRecord(${customer.serialNo})" class="text-blue-300 hover:text-blue-200 mr-3 transition">Edit</button>
+                        <button onclick="showDeleteModal(${customer.serialNo})" class="text-red-300 hover:text-red-200 transition">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Delete record
+        function deleteRecord(serialNo) {
+            const customers = getCustomers();
+            const filtered = customers.filter(c => c.serialNo !== serialNo);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+            renderRecords();
+            showToast('Record deleted successfully', 'success');
+        }
+
+        // Edit record
+        window.editRecord = function(serialNo) {
+            const customers = getCustomers();
+            const customer = customers.find(c => c.serialNo === serialNo);
+            
+            if (!customer) return;
+
+            // Handle both old format (single item) and new format (items array)
+            const items = customer.items || [{ item: customer.item || 'N/A', quantity: 1 }];
+            
+            // Store items for editing
+            window.editItemsList = JSON.parse(JSON.stringify(items));
+
+            // Populate edit form
+            document.getElementById('edit-serial-no').value = customer.serialNo;
+            document.getElementById('edit-name').value = customer.name;
+            document.getElementById('edit-contact').value = customer.contact;
+            
+            document.getElementById('edit-total').value = customer.total;
+            document.getElementById('edit-advance').value = customer.advance;
+            document.getElementById('edit-balance').value = customer.balance.toFixed(2);
+
+            // Render items in edit modal
+            renderEditItemsList();
+
+            // Show modal
+            document.getElementById('edit-modal').classList.remove('hidden');
+        };
+
+        // Render items list in edit modal
+        function renderEditItemsList() {
+            const editItemsListDiv = document.getElementById('edit-items-list');
+            if (!editItemsListDiv) return;
+            
+            editItemsListDiv.innerHTML = '';
+            if (!window.editItemsList || window.editItemsList.length === 0) {
+                window.editItemsList = [];
+                return;
+            }
+            
+            window.editItemsList.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'glass p-4 rounded-lg flex justify-between items-center mb-2';
+                itemDiv.innerHTML = `
+                    <div class="flex-1">
+                        <span class="text-white font-semibold text-lg">${item.item}</span>
+                        <span class="text-white text-opacity-90 ml-3 font-medium">Quantity: ${item.quantity}</span>
+                    </div>
+                    <button type="button" onclick="removeEditItem(${index})" class="ml-4 px-3 py-1 glass-input text-red-300 hover:text-red-200 rounded-lg transition">
+                        Remove
+                    </button>
+                `;
+                editItemsListDiv.appendChild(itemDiv);
+            });
+        }
+
+        // Remove item from edit list
+        window.removeEditItem = function(index) {
+            if (window.editItemsList) {
+                window.editItemsList.splice(index, 1);
+                renderEditItemsList();
+            }
+        };
+
+        // Update record
+        function updateRecord() {
+            const serialNo = parseInt(document.getElementById('edit-serial-no').value);
+            const customers = getCustomers();
+            const index = customers.findIndex(c => c.serialNo === serialNo);
+            
+            if (index === -1) return;
+
+            // Validate items
+            if (!window.editItemsList || window.editItemsList.length === 0) {
+                showToast('Please add at least one item', 'error');
+                return;
+            }
+
+            // Update customer
+            customers[index].name = document.getElementById('edit-name').value;
+            customers[index].contact = document.getElementById('edit-contact').value;
+            customers[index].items = JSON.parse(JSON.stringify(window.editItemsList)); // Deep copy
+            customers[index].total = parseFloat(document.getElementById('edit-total').value);
+            customers[index].advance = parseFloat(document.getElementById('edit-advance').value);
+            customers[index].balance = parseFloat(document.getElementById('edit-balance').value);
+
+            // Save to localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+            
+            // Close modal
+            document.getElementById('edit-modal').classList.add('hidden');
+            window.editItemsList = [];
+            
+            // Refresh table
+            renderRecords();
+            
+            // Show success message
+            showToast('Record updated successfully', 'success');
+        }
+
+        // Initialize search
+        function initializeSearch() {
+            const searchInput = document.getElementById('search-contact');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim().toLowerCase();
+                const customers = getCustomers();
+                
+                if (searchTerm === '') {
+                    renderRecords();
+                } else {
+                    const filtered = customers.filter(c => 
+                        c.contact.toLowerCase().includes(searchTerm)
+                    );
+                    renderRecords(filtered);
+                }
+            });
+        }
+
+        // Initialize export
+        function initializeExport() {
+            document.getElementById('export-csv').addEventListener('click', function() {
+                exportToCSV();
+            });
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            const customers = getCustomers();
+            
+            if (customers.length === 0) {
+                showToast('No records to export', 'error');
+                return;
+            }
+
+            // CSV Headers
+            const headers = ['S.No.', 'Date & Time', 'Name', 'Contact Number', 'Item', 'Quantity', 'Total Amount', 'Advance Payment', 'Balance Due'];
+            
+            // Prepare CSV rows
+            const csvRows = [headers.join(',')];
+            
+            customers.forEach(customer => {
+                // Handle both old format (single item) and new format (items array)
+                const items = customer.items || [{ item: customer.item || 'N/A', quantity: 1 }];
+                
+                // Handle date and time
+                const dateTimeExcel = customer.dateTime || (customer.date && customer.time ? `${customer.date} ${customer.time}` : customer.date || 'N/A');
+                
+                items.forEach((item, index) => {
+                    const row = [
+                        index === 0 ? customer.serialNo : '',
+                        index === 0 ? `"${dateTimeExcel}"` : '',
+                        index === 0 ? `"${customer.name}"` : '',
+                        index === 0 ? `"${customer.contact}"` : '',
+                        `"${item.item}"`,
+                        item.quantity,
+                        index === 0 ? customer.total.toFixed(2) : '',
+                        index === 0 ? customer.advance.toFixed(2) : '',
+                        index === 0 ? customer.balance.toFixed(2) : ''
+                    ];
+                    csvRows.push(row.join(','));
+                });
+            });
+
+            // Create CSV content
+            const csvContent = csvRows.join('\n');
+            
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            // Generate filename with current date
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `Bright_Studio_Customers_${date}.csv`;
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('CSV file exported successfully', 'success');
+        }
+
+        // Generate Invoice
+        window.generateInvoice = function(serialNo) {
+            const customers = getCustomers();
+            const customer = customers.find(c => c.serialNo === serialNo);
+            
+            if (!customer) {
+                showToast('Customer record not found', 'error');
+                return;
+            }
+
+            // Handle date and time
+            const dateTime = customer.dateTime || (customer.date && customer.time ? `${customer.date} ${customer.time}` : customer.date || 'N/A');
+            
+            // Populate invoice
+            document.getElementById('invoice-serial').textContent = customer.serialNo;
+            document.getElementById('invoice-datetime').textContent = dateTime;
+            document.getElementById('invoice-name').textContent = customer.name;
+            document.getElementById('invoice-contact').textContent = customer.contact;
+            
+            // Handle items
+            const items = customer.items || [{ item: customer.item || 'N/A', quantity: 1 }];
+            const itemsTable = document.getElementById('invoice-items');
+            itemsTable.innerHTML = '';
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-3 text-sm text-gray-900">${item.item}</td>
+                    <td class="px-4 py-3 text-sm text-gray-900 text-center">${item.quantity}</td>
+                `;
+                itemsTable.appendChild(row);
+            });
+            
+            // Populate amounts
+            document.getElementById('invoice-total').textContent = `₹${customer.total.toFixed(2)}`;
+            document.getElementById('invoice-advance').textContent = `₹${customer.advance.toFixed(2)}`;
+            document.getElementById('invoice-balance').textContent = `₹${customer.balance.toFixed(2)}`;
+            
+            // Show modal
+            document.getElementById('invoice-modal').classList.remove('hidden');
+        };
+
+        // Initialize invoice modal
+        function initializeInvoice() {
+            const invoiceModal = document.getElementById('invoice-modal');
+            const closeBtn = document.getElementById('invoice-close');
+            const printBtn = document.getElementById('invoice-print');
+            
+            closeBtn.addEventListener('click', function() {
+                invoiceModal.classList.add('hidden');
+            });
+            
+            printBtn.addEventListener('click', function() {
+                window.print();
+            });
+            
+            // Close modal when clicking outside
+            invoiceModal.addEventListener('click', function(e) {
+                if (e.target === invoiceModal) {
+                    invoiceModal.classList.add('hidden');
+                }
+            });
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast px-6 py-3 rounded-lg shadow-lg glass ${
+                type === 'success' ? 'text-green-200 border-green-400' : 'text-red-200 border-red-400'
+            } border`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+
