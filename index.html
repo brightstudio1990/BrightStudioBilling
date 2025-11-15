@@ -130,7 +130,7 @@
 
                             <div>
                                 <label for="contact-number" class="block text-sm font-medium text-white mb-2">Contact Number <span class="text-red-400">*</span></label>
-                                <input type="tel" id="contact-number" name="contact" required
+                                <input type="tel" id="contact-number" name="contact" required maxlength="10"
                                     class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
                             </div>
 
@@ -206,6 +206,10 @@
                             <h4 class="text-sm font-medium text-white text-opacity-70">Customers with Pending Dues</h4>
                             <p id="pending-dues-count" class="text-3xl font-bold text-white mt-2">0</p>
                         </div>
+                        <div class="glass p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-white text-opacity-70">Albums Not Checked</h4>
+                            <p id="album-not-checked-count" class="text-3xl font-bold text-white mt-2">0</p>
+                        </div>
                     </div>
 
                     <h2 class="text-2xl font-semibold mb-6 text-white">Customer Records</h2>
@@ -216,10 +220,14 @@
                             <input type="text" id="search-input" placeholder="Start typing to search..."
                                 class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
                         </div>
-                        <div class="flex items-end">
-                            <div class="flex items-center gap-3">
+                        <div class="flex items-end gap-x-6 gap-y-3 flex-wrap">
+                            <div class="flex items-center">
                                 <input type="checkbox" id="show-pending-toggle" class="h-4 w-4 rounded glass-input text-blue-300 focus:ring-blue-400">
-                                <label for="show-pending-toggle" class="text-sm font-medium text-white">Show Pending Dues Only</label>
+                                <label for="show-pending-toggle" class="ml-2 text-sm font-medium text-white">Show Pending Dues Only</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="show-album-not-checked-toggle" class="h-4 w-4 rounded glass-input text-blue-300 focus:ring-blue-400">
+                                <label for="show-album-not-checked-toggle" class="ml-2 text-sm font-medium text-white">Show Album Not Checked</label>
                             </div>
                         </div>
                     </div>
@@ -292,7 +300,7 @@
                             </div>
                             <div>
                                 <label for="edit-contact" class="block text-sm font-medium text-white mb-2">Contact Number <span class="text-red-400">*</span></label>
-                                <input type="tel" id="edit-contact" required
+                                <input type="tel" id="edit-contact" required maxlength="10"
                                     class="glass-input w-full px-4 py-2 rounded-lg text-white placeholder-white placeholder-opacity-50 focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
                             </div>
                             <div>
@@ -338,6 +346,10 @@
                         <div class="flex items-center pt-2">
                             <input type="checkbox" id="edit-mark-as-paid" class="h-4 w-4 rounded glass-input text-blue-300 focus:ring-blue-400">
                             <label for="edit-mark-as-paid" class="ml-2 block text-sm font-medium text-white">Mark as Paid (Sets Balance to 0)</label>
+                        </div>
+                        <div id="edit-album-check-container" class="hidden flex items-center pt-2">
+                            <input type="checkbox" id="edit-album-check" class="h-4 w-4 rounded glass-input text-blue-300 focus:ring-blue-400">
+                            <label for="edit-album-check" class="ml-2 block text-sm font-medium text-white">Album Check</label>
                         </div>
                         
                         <div id="edit-items-list-container" class="mt-4">
@@ -506,6 +518,7 @@
         const billForm = document.getElementById('bill-form');
         const searchInput = document.getElementById('search-input');
         const showPendingToggle = document.getElementById('show-pending-toggle');
+        const showAlbumNotCheckedToggle = document.getElementById('show-album-not-checked-toggle');
         const pendingDuesCount = document.getElementById('pending-dues-count');
         const recordsTbody = document.getElementById('records-tbody');
         const noRecords = document.getElementById('no-records');
@@ -827,7 +840,8 @@
                     quantity: quantity,
                     price: price,
                     itemTotal: itemTotal,
-                    customItem: itemValue === 'Other...' ? displayItem : ''
+                    //customItem: itemValue === 'Other...' ? displayItem : ''
+                    isCustom: (itemValue === 'Other...')
                 });
 
                 itemsListContainer.classList.remove('hidden');
@@ -886,7 +900,6 @@
         // =======================================================================
         // 🔥 FIRESTORE CRUD - CREATE
         // =======================================================================
-        
         async function saveBill() {
             if (!currentUserId) {
                 showToast('You must be logged in to save.', 'error');
@@ -895,13 +908,28 @@
             
             const formData = new FormData(billForm);
             const customerName = formData.get('name');
-            const contact = formData.get('contact');
+            const contact = formData.get('contact'); // Get the contact number
             const advance = parseFloat(formData.get('advance'));
 
-            if (!customerName || !contact) { showToast('Please fill in customer name and contact', 'error'); return; }
+            // =======================================================
+            // ⬇️ START OF NEW VALIDATION ⬇️
+            // =======================================================
+            const phoneRegex = /^[0-9]{10}$/; // This checks for exactly 10 digits
+            
+            if (!phoneRegex.test(contact)) {
+                showToast('Contact number must be exactly 10 digits', 'error');
+                return; // Stop the function
+            }
+            // =======================================================
+            // ⬆️ END OF NEW VALIDATION ⬆️
+            // =======================================================
+
+            if (!customerName) { showToast('Please fill in customer name', 'error'); return; }
             if (itemsList.length === 0) { showToast('Please add at least one item', 'error'); return; }
             if (isNaN(advance)) { showToast('Please enter a valid advance payment', 'error'); return; }
 
+            // ... (rest of the function is the same) ...
+            
             const calculatedTotal = itemsList.reduce((sum, item) => sum + (item.itemTotal || 0), 0);
             if (calculatedTotal <= 0) { showToast('Total amount must be greater than zero', 'error'); return; }
             
@@ -909,22 +937,22 @@
             const newSerialNo = await getNextSerialNumber(); // Get new serial number
 
             const customerRecord = {
-                userId: currentUserId, // Link record to the logged-in user
+                userId: currentUserId,
                 serialNo: newSerialNo,
-                invoice_date: Timestamp.now(), // Use Firestore Timestamp
-                name: toTitleCase(customerName), // NEW: Save in Title Case
-                contact: contact,
+                invoice_date: Timestamp.now(),
+                name: toTitleCase(customerName),
+                contact: contact, // Save the validated contact
                 items: JSON.parse(JSON.stringify(itemsList)),
                 total: calculatedTotal,
                 advance: advance,
                 balance: calculatedBalance,
-                is_paid: calculatedBalance <= 0 // Mark as paid if balance is zero
+                is_paid: calculatedBalance <= 0,
+                isAlbumChecked: false
             };
 
             try {
                 await addDoc(collection(db, 'invoices'), customerRecord);
                 
-                // Reset form
                 billForm.reset();
                 document.getElementById('balance-due').value = '';
                 document.getElementById('custom-item-container').classList.add('hidden');
@@ -941,6 +969,60 @@
                 showToast('Error saving bill. Please try again.', 'error');
             }
         }
+        // async function saveBill() {
+        //     if (!currentUserId) {
+        //         showToast('You must be logged in to save.', 'error');
+        //         return;
+        //     }
+            
+        //     const formData = new FormData(billForm);
+        //     const customerName = formData.get('name');
+        //     const contact = formData.get('contact');
+        //     const advance = parseFloat(formData.get('advance'));
+
+        //     if (!customerName || !contact) { showToast('Please fill in customer name and contact', 'error'); return; }
+        //     if (itemsList.length === 0) { showToast('Please add at least one item', 'error'); return; }
+        //     if (isNaN(advance)) { showToast('Please enter a valid advance payment', 'error'); return; }
+
+        //     const calculatedTotal = itemsList.reduce((sum, item) => sum + (item.itemTotal || 0), 0);
+        //     if (calculatedTotal <= 0) { showToast('Total amount must be greater than zero', 'error'); return; }
+            
+        //     const calculatedBalance = parseFloat(document.getElementById('balance-due').value);
+        //     const newSerialNo = await getNextSerialNumber(); // Get new serial number
+
+        //     const customerRecord = {
+        //         userId: currentUserId, // Link record to the logged-in user
+        //         serialNo: newSerialNo,
+        //         invoice_date: Timestamp.now(), // Use Firestore Timestamp
+        //         name: toTitleCase(customerName), // NEW: Save in Title Case
+        //         contact: contact,
+        //         items: JSON.parse(JSON.stringify(itemsList)),
+        //         total: calculatedTotal,
+        //         advance: advance,
+        //         balance: calculatedBalance,
+        //         is_paid: calculatedBalance <= 0 // Mark as paid if balance is zero
+        //     };
+
+        //     try {
+        //         await addDoc(collection(db, 'invoices'), customerRecord);
+                
+        //         // Reset form
+        //         billForm.reset();
+        //         document.getElementById('balance-due').value = '';
+        //         document.getElementById('custom-item-container').classList.add('hidden');
+        //         document.getElementById('custom-item').required = false;
+        //         document.getElementById('item-quantity').value = 1;
+        //         document.getElementById('item-price').value = 0;
+        //         itemsList = [];
+        //         document.getElementById('items-list-container').classList.add('hidden');
+        //         document.getElementById('items-list').innerHTML = '';
+                
+        //         showToast('✅ Bill Saved Successfully!', 'success');
+        //     } catch (error) {
+        //         console.error("Error adding document: ", error);
+        //         showToast('Error saving bill. Please try again.', 'error');
+        //     }
+        // }
 
         // =======================================================================
         // 🔥 FIRESTORE CRUD - READ (with Search & Filter)
@@ -953,37 +1035,26 @@
                 searchTimeout = setTimeout(renderRecords, 300); // Debounce search
             });
             showPendingToggle.addEventListener('change', renderRecords);
+            showAlbumNotCheckedToggle.addEventListener('change', renderRecords);
         }
         async function renderRecords() {
             if (!currentUserId) return;
 
+            // 1. Get the filter states from the checkboxes
             const searchTerm = searchInput.value.trim().toLowerCase();
             const showPending = showPendingToggle.checked;
+            const showAlbumNotChecked = showAlbumNotCheckedToggle.checked; 
 
             recordsTbody.innerHTML = '';
             noRecords.classList.add('hidden');
 
             try {
-                // Base query:
-                let q;
-
-                if (showPending) {
-                    // NEW: This query matches the index you are building
-                    q = query(
-                        collection(db, 'invoices'),
-                        where('userId', '==', currentUserId),
-                        where('balance', '>', 0),           // Filter on balance
-                        orderBy('balance', 'asc'),      // Order by balance FIRST
-                        orderBy('invoice_date', 'desc') // Then order by date
-                    );
-                } else {
-                    // This is the original query for all records (uses your FIRST index)
-                    q = query(
-                        collection(db, 'invoices'),
-                        where('userId', '==', currentUserId),
-                        orderBy('invoice_date', 'desc')
-                    );
-                }
+                // 2. Build ONE simple query
+                let q = query(
+                    collection(db, 'invoices'),
+                    where('userId', '==', currentUserId),
+                    orderBy('invoice_date', 'desc')
+                );
                 
                 const querySnapshot = await getDocs(q);
                 let records = [];
@@ -991,7 +1062,19 @@
                     records.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Client-side search (still the most flexible way)
+                // 3. Apply all filters one by one
+                if (showPending) {
+                    records = records.filter(c => c.balance > 0);
+                }
+                
+                if (showAlbumNotChecked) {
+                    records = records.filter(c => {
+                        const hasCustomItem = (c.items || []).some(item => item.isCustom);
+                        const isUnchecked = c.isAlbumChecked === false || c.isAlbumChecked === undefined;
+                        return hasCustomItem && isUnchecked;
+                    });
+                }
+                
                 if (searchTerm) {
                     records = records.filter(c =>
                         c.name.toLowerCase().includes(searchTerm) ||
@@ -1000,24 +1083,30 @@
                     );
                 }
 
+                // 4. Render the final, filtered list
                 if (records.length === 0) {
                     noRecords.classList.remove('hidden');
                     return;
                 }
 
-                // Note: If you checked "pending", the list is now sorted by balance,
-                // which is actually useful (lowest balance first).
                 records.forEach(customer => {
                     const items = customer.items || [];
+                    
+                    // =======================================================
+                    // ⬇️ FIX 1: Changed "class." to "class" ⬇️
+                    // =======================================================
                     const itemsDisplay = items.map(i => 
-                        `<div class="mb-1"><span class="font-semibold">${i.item}</span> - <span class="text-blue-300">Qty: ${i.quantity}</span></div>`
-                    ).join('');
+                        `<span class="font-semibold">${i.item}</span> (Qty: ${i.quantity})`
+                    ).join(', ');
                     
                     const dateTime = customer.invoice_date.toDate().toLocaleString('en-IN', {
                         year: 'numeric', month: '2-digit', day: '2-digit', 
                         hour: '2-digit', minute: '2-digit', hour12: true
                     });
                     
+                    // =======================================================
+                    // ⬇️ FIX 2: Changed "class." to "class" ⬇️
+                    // =======================================================
                     const pendingIndicator = customer.balance > 0 
                         ? '<span class="text-red-400 mr-2" title="Pending Dues">●</span>' 
                         : '<span class="text-green-400 mr-2" title="Paid">●</span>';
@@ -1029,9 +1118,11 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${dateTime}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.name}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.contact}</td>
-                        <td class="px-6 py-4 text-sm text-white max-w-xs"><div class="space-y-1">${itemsDisplay}</div></td>
+                        <td class="px-6 py-4 text-sm text-white">${itemsDisplay}</td>
+                        
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.total.toFixed(2)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.advance.toFixed(2)}</td>
+                        
+                        <td class="px-6 py-4 whitespace-nowrowrap text-sm text-white">${customer.advance.toFixed(2)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">${customer.balance.toFixed(2)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button onclick="generateInvoice('${customer.id}')" class="text-green-300 hover:text-green-200 mr-3 transition">Generate Invoice</button>
@@ -1049,6 +1140,105 @@
                 noRecords.textContent = 'Error loading records. Check console for details.';
             }
         }
+        // async function renderRecords() {
+        //     if (!currentUserId) return;
+
+        //     const searchTerm = searchInput.value.trim().toLowerCase();
+        //     const showPending = showPendingToggle.checked;
+
+        //     recordsTbody.innerHTML = '';
+        //     noRecords.classList.add('hidden');
+
+        //     try {
+        //         // Base query:
+        //         let q;
+
+        //         if (showPending) {
+        //             // NEW: This query matches the index you are building
+        //             q = query(
+        //                 collection(db, 'invoices'),
+        //                 where('userId', '==', currentUserId),
+        //                 where('balance', '>', 0),           // Filter on balance
+        //                 orderBy('balance', 'asc'),      // Order by balance FIRST
+        //                 orderBy('invoice_date', 'desc') // Then order by date
+        //             );
+        //         } else {
+        //             // This is the original query for all records (uses your FIRST index)
+        //             q = query(
+        //                 collection(db, 'invoices'),
+        //                 where('userId', '==', currentUserId),
+        //                 orderBy('invoice_date', 'desc')
+        //             );
+        //         }
+                
+        //         const querySnapshot = await getDocs(q);
+        //         let records = [];
+        //         querySnapshot.forEach((doc) => {
+        //             records.push({ id: doc.id, ...doc.data() });
+        //         });
+
+        //         // Client-side search (still the most flexible way)
+        //         if (searchTerm) {
+        //             records = records.filter(c =>
+        //                 c.name.toLowerCase().includes(searchTerm) ||
+        //                 c.contact.includes(searchTerm) ||
+        //                 String(c.serialNo).includes(searchTerm)
+        //             );
+        //         }
+
+        //         if (records.length === 0) {
+        //             noRecords.classList.remove('hidden');
+        //             return;
+        //         }
+
+        //         // Note: If you checked "pending", the list is now sorted by balance,
+        //         // which is actually useful (lowest balance first).
+        //         records.forEach(customer => {
+        //             const items = customer.items || [];
+        //             const itemsDisplay = items.map(i => 
+        //                 `<span class="font-semibold">${i.item}</span> (Qty: ${i.quantity})`
+        //             ).join(', ');
+        //             // const items = customer.items || [];
+        //             // const itemsDisplay = items.map(i => 
+        //             //     `<div class="mb-1"><span class="font-semibold">${i.item}</span> - <span class="text-blue-300">Qty: ${i.quantity}</span></div>`
+        //             // ).join('');
+                    
+        //             const dateTime = customer.invoice_date.toDate().toLocaleString('en-IN', {
+        //                 year: 'numeric', month: '2-digit', day: '2-digit', 
+        //                 hour: '2-digit', minute: '2-digit', hour12: true
+        //             });
+                    
+        //             const pendingIndicator = customer.balance > 0 
+        //                 ? '<span class="text-red-400 mr-2" title="Pending Dues">●</span>' 
+        //                 : '<span class="text-green-400 mr-2" title="Paid">●</span>';
+
+        //             const row = document.createElement('tr');
+        //             row.className = 'hover:bg-white hover:bg-opacity-10 transition';
+        //             row.innerHTML = `
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${pendingIndicator}${customer.serialNo}</td>
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${dateTime}</td>
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.name}</td>
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.contact}</td>
+        //                 <td class="px-6 py-4 text-sm text-white">${itemsDisplay}</td>
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.total.toFixed(2)}</td>
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white">${customer.advance.toFixed(2)}</td>
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">${customer.balance.toFixed(2)}</td>
+        //                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        //                     <button onclick="generateInvoice('${customer.id}')" class="text-green-300 hover:text-green-200 mr-3 transition">Generate Invoice</button>
+        //                     <button onclick="editRecord('${customer.id}')" class="text-blue-300 hover:text-blue-200 mr-3 transition">Edit</button>
+        //                     <button onclick="showDeleteModal('${customer.id}')" class="text-red-300 hover:text-red-200 transition">Delete</button>
+        //                 </td>
+        //             `;
+        //             recordsTbody.appendChild(row);
+        //         });
+
+        //     } catch (error) {
+        //         console.error("Error getting documents: ", error);
+        //         showToast('Error loading records.', 'error');
+        //         noRecords.classList.remove('hidden');
+        //         noRecords.textContent = 'Error loading records. Check console for details.';
+        //     }
+        // }
 
         // async function renderRecords() {
         //     if (!currentUserId) return;
@@ -1137,15 +1327,68 @@
         // }
         
         // NEW: Dashboard Stats
+        // async function renderDashboardStats() {
+        //     if (!currentUserId) return;
+        //     const q = query(
+        //         collection(db, 'invoices'), 
+        //         where('userId', '==', currentUserId), 
+        //         where('balance', '>', 0)
+        //     );
+        //     const querySnapshot = await getDocs(q);
+        //     pendingDuesCount.textContent = querySnapshot.size;
+        // }
+        // async function renderDashboardStats() {
+        //     if (!currentUserId) return;
+
+        //     // Query 1: Pending Dues
+        //     const pendingQuery = query(
+        //         collection(db, 'invoices'), 
+        //         where('userId', '==', currentUserId), 
+        //         where('balance', '>', 0)
+        //     );
+        //     const pendingSnapshot = await getDocs(pendingQuery);
+        //     pendingDuesCount.textContent = pendingSnapshot.size;
+        
+        //     // Query 2: Albums Not Checked
+        //     const albumQuery = query(
+        //         collection(db, 'invoices'), 
+        //         where('userId', '==', currentUserId), 
+        //         where('isAlbumChecked', '==', true) // <-- NEW QUERY
+        //     );
+        //     const albumSnapshot = await getDocs(albumQuery);
+        //     document.getElementById('album-not-checked-count').textContent = albumSnapshot.size;
+        //   }
         async function renderDashboardStats() {
             if (!currentUserId) return;
-            const q = query(
-                collection(db, 'invoices'), 
-                where('userId', '==', currentUserId), 
-                where('balance', '>', 0)
-            );
-            const querySnapshot = await getDocs(q);
-            pendingDuesCount.textContent = querySnapshot.size;
+            
+            // --- Query 1: Pending Dues ---
+            try {
+                const pendingQuery = query(
+                    collection(db, 'invoices'), 
+                    where('userId', '==', currentUserId), 
+                    where('balance', '>', 0)
+                );
+                const pendingSnapshot = await getDocs(pendingQuery);
+                pendingDuesCount.textContent = pendingSnapshot.size;
+            } catch (error) {
+                console.error("Error getting pending dues count:", error);
+                pendingDuesCount.textContent = "Err"; 
+            }
+
+            // --- Query 2: Albums Not Checked (NEW, SIMPLER QUERY) ---
+            try {
+                const albumQuery = query(
+                    collection(db, 'invoices'), 
+                    where('userId', '==', currentUserId), 
+                    where('isAlbumChecked', '==', false) // <-- This is the new, simpler query
+                );
+                const albumSnapshot = await getDocs(albumQuery);
+                document.getElementById('album-not-checked-count').textContent = albumSnapshot.size;
+            } catch (error) {
+                // This will print the index error to your console
+                console.error("Error getting album check count (NEW QUERY):", error); 
+                document.getElementById('album-not-checked-count').textContent = "Err"; 
+            }
         }
 
         // =======================================================================
@@ -1172,6 +1415,9 @@
                 document.getElementById('edit-name').value = customer.name;
                 document.getElementById('edit-contact').value = customer.contact;
                 document.getElementById('edit-advance').value = customer.advance;
+                document.getElementById('edit-album-check').checked = customer.isAlbumChecked || false;
+                const hasCustomItem = (customer.items || []).some(item => item.isCustom);
+                document.getElementById('edit-album-check-container').classList.toggle('hidden', !hasCustomItem);
                 
                 // NEW: Handle Mark as Paid
                 document.getElementById('edit-mark-as-paid').checked = customer.is_paid || customer.balance <= 0;
@@ -1188,14 +1434,27 @@
                 showToast('Error opening record.', 'error');
             }
         };
-
         async function updateRecord() {
             if (!currentUserId) return;
+
+            // =======================================================
+            // ⬇️ START OF NEW VALIDATION ⬇️
+            // =======================================================
+            const contact = document.getElementById('edit-contact').value;
+            const phoneRegex = /^[0-9]{10}$/; // This checks for exactly 10 digits
+            
+            
+            if (!phoneRegex.test(contact)) {
+                showToast('Contact number must be exactly 10 digits', 'error');
+                return; // Stop the function
+            }
+            // =======================================================
+            // ⬆️ END OF NEW VALIDATION ⬆️
+            // =======================================================
             
             const docId = document.getElementById('edit-doc-id').value;
             const docRef = doc(db, 'invoices', docId);
             
-            // NEW: Get "Mark as Paid" status
             const markAsPaid = document.getElementById('edit-mark-as-paid').checked;
 
             if (window.editItemsList.length === 0) {
@@ -1215,13 +1474,15 @@
             }
 
             const updatedRecord = {
-                name: toTitleCase(document.getElementById('edit-name').value), // Save as Title Case
-                contact: document.getElementById('edit-contact').value,
+                name: toTitleCase(document.getElementById('edit-name').value),
+                contact: contact, // Use the validated contact
                 items: JSON.parse(JSON.stringify(window.editItemsList)),
                 total: calculatedEditTotal,
                 advance: newAdvance,
                 balance: newBalance,
-                is_paid: markAsPaid
+                is_paid: markAsPaid,
+                isAlbumChecked: document.getElementById('edit-album-check').checked
+
             };
 
             try {
@@ -1236,6 +1497,53 @@
                 showToast('Error updating record.', 'error');
             }
         }
+        // async function updateRecord() {
+        //     if (!currentUserId) return;
+            
+        //     const docId = document.getElementById('edit-doc-id').value;
+        //     const docRef = doc(db, 'invoices', docId);
+            
+        //     // NEW: Get "Mark as Paid" status
+        //     const markAsPaid = document.getElementById('edit-mark-as-paid').checked;
+
+        //     if (window.editItemsList.length === 0) {
+        //         showToast('Please add at least one item', 'error');
+        //         return;
+        //     }
+
+        //     const calculatedEditTotal = window.editItemsList.reduce((sum, item) => sum + (item.itemTotal || 0), 0);
+        //     let newAdvance = parseFloat(document.getElementById('edit-advance').value);
+        //     let newBalance;
+
+        //     if (markAsPaid) {
+        //         newAdvance = calculatedEditTotal;
+        //         newBalance = 0;
+        //     } else {
+        //         newBalance = calculatedEditTotal - newAdvance;
+        //     }
+
+        //     const updatedRecord = {
+        //         name: toTitleCase(document.getElementById('edit-name').value), // Save as Title Case
+        //         contact: document.getElementById('edit-contact').value,
+        //         items: JSON.parse(JSON.stringify(window.editItemsList)),
+        //         total: calculatedEditTotal,
+        //         advance: newAdvance,
+        //         balance: newBalance,
+        //         is_paid: markAsPaid
+        //     };
+
+        //     try {
+        //         await updateDoc(docRef, updatedRecord);
+        //         editModal.classList.add('hidden');
+        //         window.editItemsList = [];
+        //         renderRecords();
+        //         renderDashboardStats();
+        //         showToast('Record updated successfully', 'success');
+        //     } catch (error) {
+        //         console.error("Error updating document: ", error);
+        //         showToast('Error updating record.', 'error');
+        //     }
+        // }
         
         // --- Edit Modal Item Logic (Unchanged) ---
         function renderEditItemsList() {
@@ -1264,6 +1572,7 @@
             window.editItemsList.splice(index, 1);
             renderEditItemsList();
             calculateEditTotalAmount();
+            document.getElementById('edit-album-check-container').classList.toggle('hidden', !window.editItemsList.some(item => item.isCustom));
         };
         function calculateEditTotalAmount() {
             const editTotal = document.getElementById('edit-total');
@@ -1290,7 +1599,10 @@
             if (itemValue === 'Other...' && !displayItem.trim()) { showToast('Please enter custom item details', 'error'); return; }
 
             const itemTotal = price * quantity;
-            window.editItemsList.push({ item: displayItem, quantity: quantity, price: price, itemTotal: itemTotal, customItem: itemValue === 'Other...' ? displayItem : '' });
+            window.editItemsList.push({ item: displayItem, quantity: quantity, price: price, itemTotal: itemTotal, 
+                //customItem: itemValue === 'Other...' ? displayItem : ''
+                isCustom: (itemValue === 'Other...') 
+            });
             
             renderEditItemsList();
             calculateEditTotalAmount();
@@ -1300,10 +1612,18 @@
             document.getElementById('edit-price').value = 0;
             customItemInput.value = '';
             document.getElementById('edit-custom-item-container').classList.add('hidden');
+            // Show Album Check box if any item is custom
+            document.getElementById('edit-album-check-container').classList.toggle('hidden', !window.editItemsList.some(item => item.isCustom));
         });
-        document.getElementById('edit-item').addEventListener('change', function() {
-            document.getElementById('edit-custom-item-container').classList.toggle('hidden', this.value !== 'Other...');
-        });
+       // document.getElementById('edit-item').addEventListener('change', function() {
+       //     document.getElementById('edit-custom-item-container').classList.toggle('hidden', this.value !== 'Other...');
+       // });
+       document.getElementById('edit-item').addEventListener('change', function() {
+       const isOther = this.value === 'Other...';
+       document.getElementById('edit-custom-item-container').classList.toggle('hidden', !isOther);
+       // Also show/hide album check when "Other..." is selected
+       document.getElementById('edit-album-check-container').classList.toggle('hidden', !isOther);
+       });
 
         // =======================================================================
         // 🔥 FIRESTORE CRUD - DELETE
